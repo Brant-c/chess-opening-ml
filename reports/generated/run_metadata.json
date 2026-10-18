@@ -1,0 +1,30 @@
+{
+  "python": "3.14.4",
+  "pandas": "3.0.2",
+  "scikit_learn": "1.9.1",
+  "random_state": 42,
+  "features": [
+    "AverageElo",
+    "EloDiff",
+    "ECO",
+    "TimeControl"
+  ],
+  "target": "Result",
+  "class_labels": [
+    "0-1",
+    "1-0",
+    "1/2-1/2"
+  ],
+  "split_rows": {
+    "train": 79517,
+    "validation": 14910,
+    "test_reserved": 4970
+  },
+  "test_evaluated": false,
+  "decision_tree": {
+    "max_depth": 8,
+    "min_samples_leaf": 50,
+    "random_state": 42
+  },
+  "input": "data\\processed\\lichess_clean_2016_08.parquet"
+}
