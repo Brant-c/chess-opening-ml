@@ -13,6 +13,7 @@ import pandas as pd
 import sklearn
 from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, f1_score, log_loss
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
@@ -102,7 +103,7 @@ def split_dataset(
 
 
 def build_models() -> dict[str, Any]:
-    """Build the agreed naive and course-level baseline models."""
+    """Build baseline and optimized ensemble models."""
     preprocessor = ColumnTransformer(
         transformers=[
             ("categorical", OneHotEncoder(handle_unknown="ignore"), CATEGORICAL_FEATURES)
@@ -122,9 +123,25 @@ def build_models() -> dict[str, Any]:
             ),
         ]
     )
+    forest = Pipeline(
+        steps=[
+            ("preprocessing", preprocessor),
+            (
+                "model",
+                RandomForestClassifier(
+                    n_estimators=150,
+                    max_depth=20,
+                    min_samples_leaf=10,
+                    random_state=RANDOM_STATE,
+                    n_jobs=-1,
+                ),
+            ),
+        ]
+    )
     return {
         "Majority Class": DummyClassifier(strategy="most_frequent"),
         "Decision Tree": tree,
+        "Random Forest": forest,
     }
 
 
@@ -141,7 +158,7 @@ def _probabilities_in_label_order(model: Any, X: pd.DataFrame) -> np.ndarray:
 def evaluate_baselines(
     frame: pd.DataFrame,
 ) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
-    """Fit both models on training data and report validation-only metrics."""
+    """Fit all models on training data and report validation-only metrics."""
     X, y = prepare_dataset(frame)
     X_train, X_validation, X_test, y_train, y_validation, y_test = split_dataset(X, y)
     models = build_models()
@@ -208,9 +225,10 @@ def evaluate_baselines(
             "test_reserved": len(y_test),
         },
         "test_evaluated": False,
-        "decision_tree": {
-            "max_depth": 8,
-            "min_samples_leaf": 50,
+        "random_forest": {
+            "n_estimators": 150,
+            "max_depth": 20,
+            "min_samples_leaf": 10,
             "random_state": RANDOM_STATE,
         },
     }
@@ -248,7 +266,7 @@ def main() -> None:
         "--output-dir",
         type=Path,
         default=Path("reports/generated"),
-        help="Directory for the baseline table, class report, and run metadata.",
+        help="Directory for output tables and metadata.",
     )
     args = parser.parse_args()
 

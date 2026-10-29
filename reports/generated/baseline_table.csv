@@ -1,3 +1,4 @@
 model,split,n,accuracy,macro_f1,log_loss
 Majority Class,validation,14910,0.497116,0.221366,18.125776
 Decision Tree,validation,14910,0.624547,0.423022,0.770155
+Random Forest,validation,14910,0.629779,0.428050,0.786680
