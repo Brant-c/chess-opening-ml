@@ -11,6 +11,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import sklearn
+import lightgbm as lgb
 from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -61,6 +62,12 @@ def prepare_dataset(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
         finite = np.isfinite(X[column].to_numpy(dtype=float, na_value=np.nan))
         if not finite.all():
             raise ValueError(f"Feature {column!r} contains missing or non-numeric values.")
+
+    # calculate absolute rating gap and individual white and black player ratings 
+    # so the models can easily split on each player's actual skill level 
+    X["AbsEloDiff"] = X["EloDiff"].abs()
+    X["WhiteElo"] = X["AverageElo"] + X["EloDiff"] / 2
+    X["BlackElo"] = X["AverageElo"] - X["EloDiff"] / 2
 
     for column in CATEGORICAL_FEATURES:
         X[column] = X[column].astype("string")
@@ -138,10 +145,34 @@ def build_models() -> dict[str, Any]:
             ),
         ]
     )
+    # lightgbm pipeline using gradient boosting to build sequential
+    # trees and handle the categorical opening codes more effectively
+    light_gbm = Pipeline(
+        steps=[
+            ("preprocessing", preprocessor),
+            (
+                "model",
+                lgb.LGBMClassifier(
+                    objective="multiclass",
+                    num_class=3,
+                    n_estimators=300,
+                    learning_rate=0.04,
+                    max_depth=8,
+                    num_leaves=8,
+                    min_child_samples=200, 
+                    random_state=RANDOM_STATE,
+                    n_jobs=-1,
+                    verbose=-1,
+                ),
+            ),
+        ]
+    )
+
     return {
         "Majority Class": DummyClassifier(strategy="most_frequent"),
         "Decision Tree": tree,
         "Random Forest": forest,
+        "LightGBM (Main)": light_gbm,
     }
 
 
@@ -217,6 +248,7 @@ def evaluate_baselines(
         "scikit_learn": sklearn.__version__,
         "random_state": RANDOM_STATE,
         "features": list(FEATURES),
+        "engineered_features": ["AbsEloDiff", "WhiteElo", "BlackElo"],
         "target": TARGET,
         "class_labels": list(CLASS_LABELS),
         "split_rows": {
@@ -229,6 +261,16 @@ def evaluate_baselines(
             "n_estimators": 150,
             "max_depth": 20,
             "min_samples_leaf": 10,
+            "random_state": RANDOM_STATE,
+        },
+        "light_gbm": {
+            "objective": "multiclass",
+            "num_class": 3,
+            "n_estimators": 300,
+            "learning_rate": 0.04,
+            "max_depth": 8,
+            "num_leaves": 8,
+            "min_child_samples": 200, 
             "random_state": RANDOM_STATE,
         },
     }
