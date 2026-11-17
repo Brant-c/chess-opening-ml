@@ -23,9 +23,14 @@ from sklearn.tree import DecisionTreeClassifier
 
 TARGET = "Result"
 CLASS_LABELS = ("0-1", "1-0", "1/2-1/2")
+MOVE_FEATURES = []
+for i in range(1, 21):
+    MOVE_FEATURES.append("Move" + str(i))
 NUMERIC_FEATURES = ("AverageElo", "EloDiff")
-CATEGORICAL_FEATURES = ("ECO", "TimeControl")
-FEATURES = NUMERIC_FEATURES + CATEGORICAL_FEATURES
+#CATEGORICAL_FEATURES = ("ECO", "TimeControl") + tuple(MOVE_FEATURES)
+CATEGORICAL_FEATURES = ("TimeControl",) + tuple(MOVE_FEATURES)
+#FEATURES = NUMERIC_FEATURES + ("ECO", "TimeControl")
+FEATURES = NUMERIC_FEATURES + ("TimeControl",)
 RANDOM_STATE = 42
 
 
@@ -44,18 +49,28 @@ def load_dataset(path: Path) -> pd.DataFrame:
         return pd.read_csv(path)
     raise ValueError(f"Unsupported dataset format {suffix!r}; use .parquet or .csv.")
 
-
 def prepare_dataset(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     """Select only pre-game predictors and validate the target and feature values."""
-    required = [*FEATURES, TARGET]
+    required = [*FEATURES, TARGET, "Moves"]
     missing = sorted(set(required) - set(frame.columns))
     if missing:
         raise ValueError(f"Dataset is missing required columns: {', '.join(missing)}")
     if frame.empty:
         raise ValueError("Dataset contains no rows.")
 
+    move_count = frame["Moves"].fillna("").astype(str).str.split().str.len()
+    frame = frame[move_count > 20].copy()
+
     X = frame.loc[:, FEATURES].copy()
     y = frame[TARGET].astype("string").str.strip()
+
+    moves = frame["Moves"].fillna("").astype(str)
+    moves = moves.str.split()
+    
+    for i in range(20):
+        column = "Move" + str(i+1)
+        X[column] = moves.str[i].fillna("NONE")
+
 
     for column in NUMERIC_FEATURES:
         X[column] = pd.to_numeric(X[column], errors="coerce")
@@ -158,7 +173,7 @@ def build_models() -> dict[str, Any]:
                     n_estimators=300,
                     learning_rate=0.04,
                     max_depth=8,
-                    num_leaves=8,
+                    num_leaves=15,
                     min_child_samples=200, 
                     random_state=RANDOM_STATE,
                     n_jobs=-1,
@@ -247,7 +262,7 @@ def evaluate_baselines(
         "pandas": pd.__version__,
         "scikit_learn": sklearn.__version__,
         "random_state": RANDOM_STATE,
-        "features": list(FEATURES),
+        "features": list(X.columns),
         "engineered_features": ["AbsEloDiff", "WhiteElo", "BlackElo"],
         "target": TARGET,
         "class_labels": list(CLASS_LABELS),
@@ -269,7 +284,7 @@ def evaluate_baselines(
             "n_estimators": 300,
             "learning_rate": 0.04,
             "max_depth": 8,
-            "num_leaves": 8,
+            "num_leaves": 15,
             "min_child_samples": 200, 
             "random_state": RANDOM_STATE,
         },
