@@ -17,6 +17,22 @@ The project will use historical chess game data to train and evaluate supervised
 
 The long-term goal is to use these results to support personalized opening recommendations for chess players.
 
+## Opening recommendation CLI
+
+From the repository root, install the project dependencies and run:
+
+```powershell
+python -m pip install -r requirements.txt
+python -m src.recommend_cli --elo 1500 --time-control rapid --style solid --color white --top-k 5
+```
+
+The CLI accepts `bullet`, `blitz`, `rapid`, and `classical` time-control aliases,
+or a Lichess control such as `300+5`. Use `--input` to select a cleaned CSV or
+Parquet dataset and `--min-games` to change the minimum training-game count for
+an opening candidate. Run `python -m src.recommend_cli --help` for all options.
+Recommendations are ranked from the model's training split; the CLI does not
+evaluate the reserved test split.
+
 ## Team
 
 - Luke McMann
