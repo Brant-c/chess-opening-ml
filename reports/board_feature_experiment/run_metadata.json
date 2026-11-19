@@ -1,0 +1,18 @@
+{
+  "input": "data\\processed\\lichess_clean_2016_08.parquet",
+  "seed": 42,
+  "training_rows": 76163,
+  "validation_rows": 14280,
+  "test_rows_reserved": 4761,
+  "test_evaluated": false,
+  "position_ply": 20,
+  "added_features": [
+    "MaterialDiff20",
+    "WhiteCastled20",
+    "BlackCastled20",
+    "WhiteDevelopedMinorPieces20",
+    "BlackDevelopedMinorPieces20"
+  ],
+  "feature_seconds": 14.824,
+  "chess_engine_used": false
+}

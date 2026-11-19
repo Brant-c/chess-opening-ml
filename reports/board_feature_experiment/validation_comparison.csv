@@ -1,0 +1,7 @@
+model,validation_group,n,accuracy,macro_f1,draw_recall,log_loss,fit_seconds
+Current LightGBM,all,14280,0.627871,0.426337,0.000000,0.752880,1.475095
+Current LightGBM,elo_gap_le_100,6962,0.529589,0.357977,0.000000,0.835988,1.475095
+Current + material,all,14280,0.632843,0.429900,0.000000,0.746650,1.645796
+Current + material,elo_gap_le_100,6962,0.539500,0.365863,0.000000,0.831158,1.645796
+Current + all board features,all,14280,0.633123,0.430148,0.000000,0.745814,2.296738
+Current + all board features,elo_gap_le_100,6962,0.540506,0.366787,0.000000,0.830282,2.296738
